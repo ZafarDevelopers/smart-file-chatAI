@@ -5,10 +5,11 @@ import { createRouteMatcher } from '@clerk/nextjs/server';
 // 1. Define routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   '/',           // Protect home
-  '/about',      // Example protected page
+  '/profile',      // Example protected page
   '/chat(.*)',   // Protect dynamic chat pages
   '/upload(.*)', // Protect file upload pages
-  '/history(.*)' // Protect history
+  '/history(.*)', // Protect history
+  '/api/(.*)',
 ]);
 
 export default function middleware(request) {
