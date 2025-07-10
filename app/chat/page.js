@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import axios from 'axios'
 
 export default function ChatPage() {
   const [file, setFile] = useState(null)
@@ -10,18 +11,29 @@ export default function ChatPage() {
   const [uploading, setUploading] = useState(false)
   const [listening, setListening] = useState(false)
   const [voices, setVoices] = useState([])
+  const [firstName, setFirstName] = useState('You')
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       const allVoices = window.speechSynthesis.getVoices()
-      if (allVoices.length) {
-        setVoices(allVoices)
-      } else {
+      if (allVoices.length) setVoices(allVoices)
+      else {
         window.speechSynthesis.onvoiceschanged = () => {
           setVoices(window.speechSynthesis.getVoices())
         }
       }
     }
+
+    // Get user first name (Clerk injects it on window.Clerk.user if available)
+    const interval = setInterval(() => {
+      const name = window.Clerk?.user?.firstName
+      if (name) {
+        setFirstName(name)
+        clearInterval(interval)
+      }
+    }, 200)
+
+    return () => clearInterval(interval)
   }, [])
 
   const handleFileChange = (e) => {
@@ -35,64 +47,55 @@ export default function ChatPage() {
     const fd = new FormData()
     fd.append('file', file)
 
-    const res = await fetch('/api/upload', {
-      method: 'POST',
-      body: fd,
-    })
-
-    const data = await res.json()
-    setUploading(false)
-
-    if (data.success) {
+    try {
+      const { data } = await axios.post('/api/upload', fd)
       setFileText(data.text)
       setChat([
         { role: 'system', content: '✅ Document uploaded successfully! You may now ask anything about it.' }
       ])
-    } else {
-      alert('Upload error: ' + data.error)
+    } catch (e) {
+      alert('Upload error: ' + e.response?.data?.error || e.message)
+    } finally {
+      setUploading(false)
     }
   }
 
   const handleSend = async () => {
     if (!prompt.trim() || !fileText) return
     setLoading(true)
-    setChat((prev) => [...prev, { role: 'user', content: prompt }])
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ documentText: fileText, question: prompt }),
-    })
+    setChat(prev => [...prev, { role: 'user', content: prompt }])
 
-    const data = await res.json()
-    setLoading(false)
-
-    if (data.success) {
-      setChat((prev) => [...prev, { role: 'assistant', content: data.response }])
-    } else {
-      alert('AI Error: ' + data.error)
+    try {
+      const { data } = await axios.post('/api/chat', {
+        documentText: fileText,
+        question: prompt,
+      })
+      setChat(prev => [...prev, { role: 'assistant', content: data.response }])
+    } catch (err) {
+      alert('AI Error: ' + err.response?.data?.error || err.message)
+    } finally {
+      setLoading(false)
+      setPrompt('')
     }
-
-    setPrompt('')
   }
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
-    alert('📋 Response Copied to clipboard')
+    alert('📋 Copied to clipboard!')
   }
 
-  const handleSpeakAnswer = (text) => {
+  const handleSpeak = (text) => {
     const utterance = new SpeechSynthesisUtterance(text)
-    const preferred = voices.find(v => v.name.toLowerCase().includes('female')) || voices[0]
-    utterance.voice = preferred
+    utterance.voice = voices.find(v => v.name.toLowerCase().includes('female')) || voices[0]
     utterance.rate = 1
     window.speechSynthesis.speak(utterance)
   }
 
   const handleVoiceInput = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) return alert('Speech recognition is not supported in this browser.')
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) return alert('Speech recognition not supported.')
 
-    const recognition = new SpeechRecognition()
+    const recognition = new SR()
     recognition.lang = 'en-US'
     recognition.interimResults = false
     recognition.continuous = false
@@ -101,8 +104,7 @@ export default function ChatPage() {
     recognition.onend = () => setListening(false)
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript
-      setPrompt(transcript)
+      setPrompt(event.results[0][0].transcript)
     }
 
     recognition.onerror = (e) => {
@@ -115,38 +117,34 @@ export default function ChatPage() {
 
   return (
     <main className="p-6 max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-center text-blue-600">
-        SmartFileChat – Chat with your document
-      </h1>
+      <h1 className="text-3xl font-bold text-center text-blue-600">SmartFileChat</h1>
 
-      {/* File Upload */}
       {!fileText && (
         <div className="space-y-2">
           <input
             type="file"
             accept=".pdf,.txt,.doc,.docx,image/*"
             onChange={handleFileChange}
-            className="block border rounded p-2"
+            className="block border border-gray-300 rounded p-2 w-full"
           />
           <button
             onClick={handleUpload}
             disabled={uploading || !file}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 w-full"
           >
             {uploading ? 'Uploading...' : 'Upload & Extract'}
           </button>
         </div>
       )}
 
-      {/* Chat Area */}
       {fileText && (
         <>
           <div className="space-y-4">
             {chat.map((msg, i) => (
               <div key={i} className="p-4 bg-gray-100 rounded shadow relative">
-                {msg.role === 'user' ? (
+                {msg.role === 'user' && (
                   <>
-                    <h5 className="font-semibold text-right">You:</h5>
+                    <h5 className="font-semibold text-right">{firstName}:</h5>
                     <p className="text-right">{msg.content}</p>
                     <button
                       onClick={() => handleCopy(msg.content)}
@@ -155,15 +153,10 @@ export default function ChatPage() {
                       Copy
                     </button>
                   </>
-                ) : msg.role === 'assistant' ? (
+                )}
+                {msg.role === 'assistant' && (
                   <>
                     <h6 className="font-semibold text-green-700">SmartFileChat AI:</h6>
-                    <button
-                        onClick={() => handleSpeakAnswer(msg.content)}
-                        className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600"
-                      >
-                        🔊 Listen</button>
-                      
                     <p className="text-gray-800">{msg.content}</p>
                     <div className="flex gap-2 mt-2">
                       <button
@@ -172,17 +165,22 @@ export default function ChatPage() {
                       >
                         Copy
                       </button>
-                      
+                      <button
+                        onClick={() => handleSpeak(msg.content)}
+                        className="text-xs bg-purple-500 text-white px-2 py-1 rounded hover:bg-purple-600"
+                      >
+                        🔊 Listen
+                      </button>
                     </div>
                   </>
-                ) : (
-                  <p className="text-sm italic text-center">{msg.content}</p>
+                )}
+                {msg.role === 'system' && (
+                  <p className="text-sm italic text-center text-gray-600">{msg.content}</p>
                 )}
               </div>
             ))}
           </div>
 
-          {/* Prompt Input */}
           <div className="mt-4 flex flex-col gap-2">
             <textarea
               value={prompt}
@@ -203,7 +201,7 @@ export default function ChatPage() {
                 disabled={loading}
                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
               >
-                {loading ? 'Thinking...' : 'Send Question'}
+                {loading ? 'Thinking...' : 'Send'}
               </button>
             </div>
           </div>

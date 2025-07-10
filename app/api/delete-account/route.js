@@ -1,25 +1,27 @@
 // app/api/delete-account/route.js
-import { auth } from '@clerk/nextjs/server'
-import { clerkClient } from '@clerk/nextjs'
+import { currentUser, clerkClient } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
 export async function DELETE(req) {
   try {
-    // 1️⃣ Protect the route — returns 404 if not logged in
-    await auth.protect()
+    const user = await currentUser()
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
 
-    // 2️⃣ Get userId
-    const { userId } = await auth()
-    console.log('✅ delete-account called for userId:', userId)
-
-    // 3️⃣ Delete via backend client
-    const client = await clerkClient()
+    const userId = user.id
+    const client = await clerkClient() // ensure correct instantiation
     await client.users.deleteUser(userId)
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('❌ delete-account error:', err)
-    const status = err.cause?.status || 500
-    return NextResponse.json({ error: err.message }, { status })
+    console.error('❌ Account deletion failed:', err)
+    return NextResponse.json(
+      { error: 'Server error' },
+      { status: 500 }
+    )
   }
 }
