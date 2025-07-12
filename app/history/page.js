@@ -6,12 +6,19 @@ import jsPDF from 'jspdf'
 export default function HistoryPage() {
   const [chats, setChats] = useState([])
   const [selected, setSelected] = useState(new Set())
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchChats = async () => {
-      const res = await fetch('/api/chats')
-      const data = await res.json()
-      if (data.success) setChats(data.chats)
+      try {
+        const res = await fetch('/api/chats')
+        const data = await res.json()
+        if (data.success) setChats(data.chats)
+      } catch (err) {
+        console.error('Failed to fetch chats:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchChats()
   }, [])
@@ -52,7 +59,7 @@ export default function HistoryPage() {
       const url = `${window.location.origin}/chat/${chat._id}`
       const shareData = {
         title: chat.title,
-        text: `Check out this chat "${chat.title}" at smart file chat AI`,
+        text: `Check out this chat "${chat.title}" at SmartFileChat AI.`,
         url,
       }
 
@@ -74,7 +81,6 @@ export default function HistoryPage() {
     const selectedChats = chats.filter((chat) => selected.has(chat._id))
 
     for (const chat of selectedChats) {
-      // 1. Fetch full chat with messages
       const res = await fetch(`/api/chat/${chat._id}`)
       const data = await res.json()
       if (!data.success || !data.chat) {
@@ -88,8 +94,8 @@ export default function HistoryPage() {
       doc.setFontSize(12)
 
       let y = 30
-      data.chat.messages.forEach((msg, index) => {
-        const label = msg.role === 'user' ? '🧑‍💬 You: ' : '🤖 smart file chat AI: '
+      data.chat.messages.forEach((msg) => {
+        const label = msg.role === 'user' ? '🧑‍💬 You: ' : '🤖 AI: '
         const lines = doc.splitTextToSize(label + msg.content, 180)
         if (y + lines.length * 7 > 280) {
           doc.addPage()
@@ -104,65 +110,80 @@ export default function HistoryPage() {
   }
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-blue-600">📜 Your Chat History</h1>
+    <main className="p-6 max-w-3xl mx-auto space-y-6">
+      <h1 className="text-2xl font-bold text-center text-blue-600">📜 Your Chat History</h1>
 
-      {selected.size > 0 && (
-        <div className="flex items-center justify-between mb-4 p-3 bg-gray-100 border rounded">
-          <p className="text-gray-700">✅ Selected: {selected.size}</p>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={nativeShare}
-              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-            >
-              🔗 Share Selected
-            </button>
-            <button
-              onClick={exportSelectedToPDF}
-              className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
-            >
-              📄 Export to PDF
-            </button>
-            <button
-              onClick={deleteSelected}
-              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-            >
-              🗑 Delete Selected
-            </button>
-          </div>
+      {loading ? (
+        <div className="text-center text-gray-600 mt-10 space-y-3">
+          <div className="w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p>Fetching previous chats from the database...</p>
         </div>
-      )}
-
-      {chats.length === 0 ? (
-        <p className="text-gray-600">No past chats found.</p>
+      ) : chats.length === 0 ? (
+        <div className="text-center text-gray-600 mt-10 space-y-3">
+          <p>No past chats found... Let's start communicating with your documents!</p>
+          <Link
+            href="/chat"
+            className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            🚀 Start New Chat
+          </Link>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {chats.map((chat) => (
-            <li
-              key={chat._id}
-              className="border p-3 rounded shadow-sm hover:bg-gray-50 relative"
-            >
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(chat._id)}
-                    onChange={() => toggleSelect(chat._id)}
-                  />
-                  <Link
-                    href={`/chat/${chat._id}`}
-                    className="text-blue-700 font-medium hover:underline"
-                  >
-                    {chat.title}
-                  </Link>
-                </label>
+        <>
+          {selected.size > 0 && (
+            <div className="flex items-center justify-between mb-4 p-3 bg-gray-100 border rounded">
+              <p className="text-gray-700">✅ Selected: {selected.size}</p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={nativeShare}
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                >
+                  🔗 Share Selected
+                </button>
+                <button
+                  onClick={exportSelectedToPDF}
+                  className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+                >
+                  📄 Export to PDF
+                </button>
+                <button
+                  onClick={deleteSelected}
+                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                >
+                  🗑 Delete Selected
+                </button>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {new Date(chat.createdAt).toLocaleString()}
-              </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+
+          <ul className="space-y-3">
+            {chats.map((chat) => (
+              <li
+                key={chat._id}
+                className="border p-4 rounded shadow hover:bg-gray-50 relative"
+              >
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(chat._id)}
+                      onChange={() => toggleSelect(chat._id)}
+                    />
+                    <Link
+                      href={`/chat/${chat._id}`}
+                      className="text-blue-700 font-medium hover:underline"
+                    >
+                      {chat.title}
+                    </Link>
+                  </label>
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(chat.createdAt).toLocaleString()}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </main>
   )

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import { usePolly } from '@/lib/usePolly'
 
 export default function ChatPage() {
   const [file, setFile] = useState(null)
@@ -10,21 +11,10 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [listening, setListening] = useState(false)
-  const [voices, setVoices] = useState([])
   const [firstName, setFirstName] = useState('You')
+  const speak = usePolly()
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const allVoices = window.speechSynthesis.getVoices()
-      if (allVoices.length) setVoices(allVoices)
-      else {
-        window.speechSynthesis.onvoiceschanged = () => {
-          setVoices(window.speechSynthesis.getVoices())
-        }
-      }
-    }
-
-    // Get user first name (Clerk injects it on window.Clerk.user if available)
     const interval = setInterval(() => {
       const name = window.Clerk?.user?.firstName
       if (name) {
@@ -85,10 +75,7 @@ export default function ChatPage() {
   }
 
   const handleSpeak = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.voice = voices.find(v => v.name.toLowerCase().includes('female')) || voices[0]
-    utterance.rate = 1
-    window.speechSynthesis.speak(utterance)
+    speak(text).catch(err => alert('TTS error: ' + err.message))
   }
 
   const handleVoiceInput = () => {
@@ -157,7 +144,7 @@ export default function ChatPage() {
                 {msg.role === 'assistant' && (
                   <>
                     <h6 className="font-semibold text-green-700">SmartFileChat AI:</h6>
-                    <p className="text-gray-800">{msg.content}</p>
+                    <p className="text-gray-800 whitespace-pre-line">{msg.content}</p>
                     <div className="flex gap-2 mt-2">
                       <button
                         onClick={() => handleCopy(msg.content)}

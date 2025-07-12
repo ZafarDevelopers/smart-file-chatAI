@@ -2,22 +2,21 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import axios from 'axios'
+import { usePolly } from '@/lib/usePolly'
 
 export default function ChatByIdPage() {
   const [chat, setChat] = useState(null)
   const [prompt, setPrompt] = useState('')
   const [loading, setLoading] = useState(false)
   const [firstName, setFirstName] = useState('You')
-  const [voices, setVoices] = useState([])
+  const speak = usePolly()
   const { id } = useParams()
 
   useEffect(() => {
-    // Fetch chat from backend
     axios.get(`/api/chat/${id}`).then(res => {
       if (res.data.success) setChat(res.data.chat)
     })
 
-    // Get Clerk user's first name
     const interval = setInterval(() => {
       const name = window.Clerk?.user?.firstName
       if (name) {
@@ -25,16 +24,6 @@ export default function ChatByIdPage() {
         clearInterval(interval)
       }
     }, 200)
-
-    // Load available voices for TTS
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      const voicesList = window.speechSynthesis.getVoices()
-      if (voicesList.length) setVoices(voicesList)
-      else {
-        window.speechSynthesis.onvoiceschanged = () =>
-          setVoices(window.speechSynthesis.getVoices())
-      }
-    }
 
     return () => clearInterval(interval)
   }, [id])
@@ -55,7 +44,6 @@ export default function ChatByIdPage() {
         chatId: chat._id,
       })
 
-      // Directly show full response (no animation)
       setChat(prev => ({
         ...prev,
         messages: [...prev.messages, { role: 'assistant', content: data.response }]
@@ -74,10 +62,7 @@ export default function ChatByIdPage() {
   }
 
   const handleSpeak = (text) => {
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.voice = voices.find(v => v.name.toLowerCase().includes('female')) || voices[0]
-    utterance.rate = 1
-    window.speechSynthesis.speak(utterance)
+    speak(text).catch(err => alert('TTS error: ' + err.message))
   }
 
   const handleVoiceInput = () => {
@@ -124,7 +109,7 @@ export default function ChatByIdPage() {
             ) : (
               <>
                 <h6 className="font-semibold text-green-700">SmartFileChat AI:</h6>
-                <p>{m.content}</p>
+                <p className="text-gray-800 whitespace-pre-line">{m.content}</p>
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={() => handleCopy(m.content)}
