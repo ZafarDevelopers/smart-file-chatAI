@@ -54,7 +54,7 @@ export default function ContactPage() {
 
       {submitted ? (
         <div className="text-center text-green-700 text-lg font-medium">
-          ✅ Thank you for reaching out{form.firstName ? `, ${form.firstName}` : ''}! We'll get back to you shortly.
+          ✅ Thank you for reaching out{form.firstName ? `, ${form.firstName}` : ' dear user'}! We will get back to you shortly.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">

@@ -120,7 +120,7 @@ export default function HistoryPage() {
         </div>
       ) : chats.length === 0 ? (
         <div className="text-center text-gray-600 mt-10 space-y-3">
-          <p>No past chats found... Let's start communicating with your documents!</p>
+          <p>No past chats found... Lets start communicating with your documents!</p>
           <Link
             href="/chat"
             className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
