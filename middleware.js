@@ -8,7 +8,10 @@ const isProtectedRoute = createRouteMatcher([
   '/upload(.*)',     // upload pages
   '/profile(.*)',    // profile pages
   '/history(.*)',    // history pages
-  '/api/(.*)'        // all API endpoints
+  '/api/(.*)',        // all API endpoints
+'!/api/chat/share/(.*)',
+'!/chat/share/(.*)',
+
 ])
 
 // ✅ Middleware handler
