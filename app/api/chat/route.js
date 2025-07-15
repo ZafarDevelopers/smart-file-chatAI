@@ -1,4 +1,4 @@
-// app/api/chat/route.js
+
 import Groq from 'groq-sdk'
 import { connectDB } from '@/lib/db'
 import Chat from '@/models/Chat'
@@ -22,10 +22,9 @@ export async function POST(req) {
       })
     }
 
-    // 🔑 Use documentText hash as a unique ID to group chats by file
+
     const docHash = crypto.createHash('sha256').update(documentText).digest('hex')
 
-    // 🧠 Try to find existing chat by user + document hash
     let chat = await Chat.findOne({ userEmail: email, documentHash: docHash })
 
     const prompt = `You are a document expert AI. Based on this content:\n\n"""${documentText.slice(
@@ -42,12 +41,12 @@ export async function POST(req) {
     const answer = groqRes.choices?.[0]?.message?.content || 'No response.'
 
     if (chat) {
-      // 💬 Append messages to existing chat
+
       chat.messages.push({ role: 'user', content: question })
       chat.messages.push({ role: 'assistant', content: answer })
       await chat.save()
     } else {
-      // ✨ Generate short clean title
+
       const titlePrompt = `Give me ONLY a 3 to 4 word short title for this document and message. No quotes or explanation.
 
 Document: ${documentText.slice(0, 1000)}
@@ -63,7 +62,7 @@ Message: ${question}`
       rawTitle = rawTitle.replace(/^["“”']+|["“”']+$/g, '') // remove quotes
       rawTitle = rawTitle.replace(/^(.*?)[:\-–]\s*/, '')   // remove prefixes
 
-      // 🆕 Create new chat with first messages
+
       chat = await Chat.create({
         userEmail: email,
         title: rawTitle,

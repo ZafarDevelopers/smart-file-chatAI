@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { usePolly } from '@/lib/usePolly'
+import { toast } from 'react-toastify'
 
 export default function ChatPage() {
   const [file, setFile] = useState(null)
@@ -10,8 +11,12 @@ export default function ChatPage() {
   const [chat, setChat] = useState([])
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [listening, setListening] = useState(false)
+  const [useUrlUpload, setUseUrlUpload] = useState(false)
+  const [fileUrl, setFileUrl] = useState('')
   const [firstName, setFirstName] = useState('You')
+  const [srProgressText, setSrProgressText] = useState('')
   const speak = usePolly()
 
   useEffect(() => {
@@ -32,19 +37,47 @@ export default function ChatPage() {
   }
 
   const handleUpload = async () => {
-    if (!file) return alert('Select a file')
+    if (!file) return toast.error('Please select a file to upload.')
     setUploading(true)
+    setUploadProgress(0)
     const fd = new FormData()
     fd.append('file', file)
 
     try {
-      const { data } = await axios.post('/api/upload', fd)
+      const { data } = await axios.post('/api/upload', fd, {
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          setUploadProgress(percent)
+          setSrProgressText(`Upload progress: ${percent} percent`)
+        }
+      })
+
       setFileText(data.text)
       setChat([
-        { role: 'system', content: '✅ Document uploaded successfully! You may now ask anything about it.' }
+        { role: 'system', content: ' Document uploaded successfully! You may now ask anything about it. happy using SMART FILE CHAT AI !' }
       ])
+      toast.success('Document uploaded successfully!')
     } catch (e) {
-      alert('Upload error: ' + e.response?.data?.error || e.message)
+      toast.error('Upload error: ' + (e.response?.data?.error || e.message))
+    } finally {
+      setUploading(false)
+      setUploadProgress(0)
+      setSrProgressText('')
+    }
+  }
+
+  const handleUrlUpload = async () => {
+    if (!fileUrl.trim()) return toast.error('Please enter a valid file URL.')
+    setUploading(true)
+    try {
+      const { data } = await axios.post('/api/upload-url', { url: fileUrl })
+      setFileText(data.text)
+      setChat([
+        { role: 'system', content: ' File from URL uploaded successfully! You may now ask anything about it. happy using SMART FILE CHAT AI!' }
+      ])
+      toast.success('File from URL uploaded successfully!')
+    } catch (e) {
+      toast.error('Upload from URL failed: ' + (e.response?.data?.error || e.message))
     } finally {
       setUploading(false)
     }
@@ -62,7 +95,7 @@ export default function ChatPage() {
       })
       setChat(prev => [...prev, { role: 'assistant', content: data.response }])
     } catch (err) {
-      alert('AI Error: ' + err.response?.data?.error || err.message)
+      toast.error('AI Error: ' + (err.response?.data?.error || err.message))
     } finally {
       setLoading(false)
       setPrompt('')
@@ -71,16 +104,16 @@ export default function ChatPage() {
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
-    alert('📋 Copied to clipboard!')
+    toast.success(' Copied to clipboard!')
   }
 
   const handleSpeak = (text) => {
-    speak(text).catch(err => alert('TTS error: ' + err.message))
+    speak(text).catch(err => toast.error('TTS error: ' + err.message))
   }
 
   const handleVoiceInput = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) return alert('Speech recognition not supported.')
+    if (!SR) return toast.error('Speech recognition not supported.')
 
     const recognition = new SR()
     recognition.lang = 'en-US'
@@ -96,7 +129,7 @@ export default function ChatPage() {
 
     recognition.onerror = (e) => {
       setListening(false)
-      alert('Speech error: ' + e.error)
+      toast.error('Speech error: ' + e.error)
     }
 
     recognition.start()
@@ -107,20 +140,73 @@ export default function ChatPage() {
       <h1 className="text-3xl font-bold text-center text-blue-600">SmartFileChat</h1>
 
       {!fileText && (
-        <div className="space-y-2">
-          <input
-            type="file"
-            accept=".pdf,.txt,.doc,.docx,image/*"
-            onChange={handleFileChange}
-            className="block border border-gray-300 rounded p-2 w-full"
-          />
-          <button
-            onClick={handleUpload}
-            disabled={uploading || !file}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 w-full"
-          >
-            {uploading ? 'Uploading...' : 'Upload & Extract'}
-          </button>
+        <div className="space-y-4">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={useUrlUpload}
+              onChange={() => setUseUrlUpload(!useUrlUpload)}
+            />
+            Upload from URL
+          </label>
+
+          {useUrlUpload ? (
+            <>
+              <input
+                type="url"
+                placeholder="Enter file URL (PDF, DOC, Image, etc.)"
+                value={fileUrl}
+                onChange={(e) => setFileUrl(e.target.value)}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <button
+                onClick={handleUrlUpload}
+                disabled={uploading}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 w-full"
+              >
+                {uploading ? 'Uploading from URL...' : 'Upload from URL'}
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                type="file"
+                accept=".pdf,.txt,.doc,.docx,image/*"
+                onChange={handleFileChange}
+                className="block border border-gray-300 rounded p-2 w-full"
+              />
+              <button
+                onClick={handleUpload}
+                disabled={uploading || !file}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 w-full"
+              >
+                {uploading ? `Uploading... ${uploadProgress}%` : 'Upload & Extract'}
+              </button>
+
+              {uploading && (
+                <>
+                  <div
+                    className="w-full bg-gray-200 rounded h-2 overflow-hidden"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={uploadProgress}
+                    aria-label="File upload progress"
+                  >
+                    <div
+                      className="bg-blue-500 h-full transition-all"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+
+                  {/* For NVDA and screen reader live updates */}
+                  <div className="sr-only" aria-live="polite">
+                    {srProgressText}
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </div>
       )}
 

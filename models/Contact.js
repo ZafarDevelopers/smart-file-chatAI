@@ -1,4 +1,4 @@
-// models/Contact.js
+
 import mongoose from 'mongoose'
 
 const ContactSchema = new mongoose.Schema({
@@ -25,7 +25,7 @@ const ContactSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    minlength: 7,
+    minlength: 11,
     maxlength: 20,
   },
   reason: {
@@ -41,7 +41,7 @@ const ContactSchema = new mongoose.Schema({
     maxlength: 1000,
   },
 }, {
-  timestamps: true, // adds createdAt and updatedAt automatically
+  timestamps: true, 
 })
 
 export default mongoose.models.Contact || mongoose.model('Contact', ContactSchema)

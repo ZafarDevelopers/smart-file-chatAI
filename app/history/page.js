@@ -44,9 +44,9 @@ export default function HistoryPage() {
     if (data.success) {
       setChats((prev) => prev.filter((chat) => !selected.has(chat._id)))
       setSelected(new Set())
-      alert('✅ Chat(s) deleted.')
+      alert('  selected Chats deleted.')
     } else {
-      alert('❌ Failed to delete chat(s).')
+      alert(' Failed to delete chats, try again.')
     }
   }
 
@@ -84,7 +84,7 @@ export default function HistoryPage() {
       const res = await fetch(`/api/chat/${chat._id}`)
       const data = await res.json()
       if (!data.success || !data.chat) {
-        alert(`❌ Could not load chat: ${chat.title}`)
+        alert(` Could not load chat: ${chat.title}`)
         continue
       }
 
@@ -95,7 +95,7 @@ export default function HistoryPage() {
 
       let y = 30
       data.chat.messages.forEach((msg) => {
-        const label = msg.role === 'user' ? '🧑‍💬 You: ' : '🤖 AI: '
+        const label = msg.role === 'user' ? 'You: ' : 'SMART FILE CHAT AI: '
         const lines = doc.splitTextToSize(label + msg.content, 180)
         if (y + lines.length * 7 > 280) {
           doc.addPage()
@@ -132,25 +132,24 @@ export default function HistoryPage() {
         <>
           {selected.size > 0 && (
             <div className="flex items-center justify-between mb-4 p-3 bg-gray-100 border rounded">
-              <p className="text-gray-700">✅ Selected: {selected.size}</p>
+              <p className="text-gray-700"> Selected: {selected.size}</p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={nativeShare}
                   className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                 >
-                  🔗 Share Selected
-                </button>
+                   Share Selected Chats                </button>
                 <button
                   onClick={exportSelectedToPDF}
                   className="bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
                 >
-                  📄 Export to PDF
+                   Export to PDF
                 </button>
                 <button
                   onClick={deleteSelected}
                   className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                 >
-                  🗑 Delete Selected
+                   Delete Selected Chats
                 </button>
               </div>
             </div>

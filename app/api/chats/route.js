@@ -1,4 +1,4 @@
-// app/api/chats/route.js
+
 import { currentUser } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Chat from '@/models/Chat'

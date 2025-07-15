@@ -1,4 +1,4 @@
-// app/api/contact/route.js
+
 import { currentUser } from '@clerk/nextjs/server'
 import { connectDB } from '@/lib/db'
 import Contact from '@/models/Contact'

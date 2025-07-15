@@ -1,4 +1,4 @@
-// app/api/chat/share/[id]/route.js
+
 import { connectDB } from '@/lib/db'
 import Chat from '@/models/Chat'
 import mongoose from 'mongoose'
@@ -22,7 +22,7 @@ export async function GET(_req, { params }) {
       })
     }
 
-    // Optionally sanitize the chat before sharing
+
     return new Response(JSON.stringify({ success: true, chat }), {
       headers: { 'Content-Type': 'application/json' }
     })

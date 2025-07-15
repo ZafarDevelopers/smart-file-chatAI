@@ -1,4 +1,4 @@
-// app/api/polly/route.js
+
 import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly'
 import { NextResponse } from 'next/server'
 import { fromEnv } from '@aws-sdk/credential-provider-env'
@@ -19,8 +19,8 @@ export async function POST(req) {
     const command = new SynthesizeSpeechCommand({
       OutputFormat: 'mp3',
       Text: text,
-      VoiceId: 'Ruth', // 👧 Natural young female voice (or try 'Joanna', 'Ruth')
-      Engine: 'neural',  // Enables Neural TTS (more realistic)
+      VoiceId: 'Ruth', 
+      Engine: 'neural',  
       TextType: 'text'
     })
 
@@ -34,7 +34,7 @@ export async function POST(req) {
     })
 
   } catch (err) {
-    console.error('🔊 Polly error:', err)
+    console.error(' Polly error:', err)
     return NextResponse.json({ success: false, error: 'Polly failed' }, { status: 500 })
   }
 }

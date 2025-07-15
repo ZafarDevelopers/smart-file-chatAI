@@ -58,7 +58,7 @@ export default function ChatByIdPage() {
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
-    alert('📋 Copied to clipboard!')
+    alert(' Copied to clipboard!')
   }
 
   const handleSpeak = (text) => {

@@ -28,14 +28,14 @@ export default function ProfilePage() {
       setDeleting(false)
 
       if (res.ok && data.success) {
-        alert('✅ Your account was deleted.')
+        alert('Your account was deleted, to use Smart File Chat AI again, feel free to create an account in the future..')
         window.location.href = '/'
       } else {
-        alert('❌ Error: ' + data.error)
+        alert(' Error: ' + data.error)
       }
     } catch (err) {
       setDeleting(false)
-      alert('❌ Unexpected error: ' + err.message)
+      alert('Unexpected error: ' + err.message)
     }
   }
 

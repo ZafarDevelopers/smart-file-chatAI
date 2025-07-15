@@ -1,4 +1,4 @@
-// app/chat/share/[id]/page.js
+
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -18,7 +18,7 @@ export default function SharedChatPage() {
           setChat(data.chat)
         }
       } catch (err) {
-        console.error('❌ Failed to fetch shared chat:', err)
+        console.error(' Failed to fetch shared chat:', err)
       } finally {
         setLoading(false)
       }
@@ -29,7 +29,7 @@ export default function SharedChatPage() {
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text)
-    alert('📋 Copied to clipboard!')
+    alert(' Copied to clipboard!')
   }
 
   const handleExportToPDF = () => {
@@ -42,7 +42,7 @@ export default function SharedChatPage() {
 
     let y = 30
     chat.messages.forEach((msg) => {
-      const label = msg.role === 'user' ? '🧑 You: ' : '🤖 AI: '
+      const label = msg.role === 'user' ? ' You: ' : ' Smart File Chat AI: '
       const lines = doc.splitTextToSize(label + msg.content, 180)
       if (y + lines.length * 7 > 280) {
         doc.addPage()

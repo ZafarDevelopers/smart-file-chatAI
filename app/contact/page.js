@@ -17,7 +17,7 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Auto-fill user data once available
+
   useEffect(() => {
     if (isSignedIn && user) {
       setForm((prev) => ({
@@ -45,7 +45,7 @@ export default function ContactPage() {
     const data = await res.json()
     setLoading(false)
     if (data.success) setSubmitted(true)
-    else alert('❌ Something went wrong. Please try again later.')
+    else alert(' Something went wrong. Please try again later.')
   }
 
   return (
@@ -54,7 +54,7 @@ export default function ContactPage() {
 
       {submitted ? (
         <div className="text-center text-green-700 text-lg font-medium">
-          ✅ Thank you for reaching out{form.firstName ? `, ${form.firstName}` : ' dear user'}! We will get back to you shortly.
+           Thank you for reaching out{form.firstName ? `, ${form.firstName}` : ' dear user'}! We will get back to you shortly.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded shadow">
@@ -64,7 +64,7 @@ export default function ContactPage() {
               value={form.firstName}
               onChange={handleChange}
               placeholder="First Name"
-              required
+              readOnly required
               className="w-1/2 border p-2 rounded"
             />
             <input
@@ -72,7 +72,7 @@ export default function ContactPage() {
               value={form.lastName}
               onChange={handleChange}
               placeholder="Last Name"
-              required
+              readOnly required
               className="w-1/2 border p-2 rounded"
             />
           </div>
@@ -83,9 +83,9 @@ export default function ContactPage() {
             value={form.email}
             onChange={handleChange}
             placeholder="Email Address"
-            required
+            readOnly required
             className="w-full border p-2 rounded"
-          />
+          /><br/>
 
           <input
             type="tel"
@@ -95,7 +95,7 @@ export default function ContactPage() {
             placeholder="Contact Number"
             required
             className="w-full border p-2 rounded"
-          />
+          /><br/>
 
           <select
             name="reason"
@@ -109,7 +109,7 @@ export default function ContactPage() {
             <option value="feedback">Give Feedback</option>
             <option value="support">Need Help</option>
             <option value="inquiry">General Inquiry</option>
-          </select>
+          </select><br/>
 
           <textarea
             name="message"

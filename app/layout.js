@@ -1,18 +1,12 @@
-
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
 } from '@clerk/nextjs'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-
-
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -24,19 +18,30 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-export const metadata= {
+export const metadata = {
   title: 'smartFileChat - talk to your documents',
-  description: 'comunicate with your documents and get intelligent answers',
+  description: 'Communicate with your documents and get intelligent answers',
 }
 
-export default function RootLayout({children}) {
+export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <Navbar />
-          {children} 
-<Footer />
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="colored"
+          />
+          {children}
+          <Footer />
         </body>
       </html>
     </ClerkProvider>
